@@ -41,7 +41,7 @@ void Matrix::init(Grid &G) {
 	block_size = G.width;
 	
 	// read info about accuracy of decision
-	std::fstream fin("accuracy.txt");
+	std::fstream fin(R"(input\accuracy.txt)");
 	fin >> max_iter >> accuracy;
 	fin.close();
 

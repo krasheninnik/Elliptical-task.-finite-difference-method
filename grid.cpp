@@ -6,7 +6,7 @@
 
 void Grid::load(int k) {
 	using namespace std;
-	fstream fin("grid_in.txt");
+	fstream fin(R"(input\grid_in.txt)");
 
 	uint32_t firstColumn;
 	uint32_t secondColumn;
@@ -29,18 +29,14 @@ void Grid::load(int k) {
 	double coef;
 
 #ifdef EXPLORE_CONVERGENCE
-	uint32_t iter = pow(2, k); // 8
+	uint32_t iter = pow(2, k); 
 	firstColumn *= iter;
 	secondColumn *= iter;
 	width *= iter;
 	firstLine *= iter;
 	height *= iter;
-	//stepX /= double(iter);
-	//stepY /= double(iter);
 
 #endif
-
-
 
 	std::vector<std::pair<uint32_t, double>> unevennessX;
 	for (int i = 0, count = 0; count != width; i++) {
@@ -66,12 +62,15 @@ void Grid::load(int k) {
 	}
 
 	///////////////////////////
-	if(k != 0) {
-		stepX /= 1 + unevennessX.back().second;
-		stepY /= 1 + unevennessY.back().second;
+	// calculate first step.
+	double stepsCoefX = 0;
+	double stepsCoefY = 0;
+	for (uint32_t i = 0; i < iter; i++) {
+		stepsCoefX += pow(unevennessX[0].second, i);
+		stepsCoefY += pow(unevennessY[0].second, i);
 	}
-	////////////////////////
-
+	stepX /= stepsCoefX;
+	stepY /= stepsCoefY;
 
 	// formation grig:
 	// memory allocation for grid

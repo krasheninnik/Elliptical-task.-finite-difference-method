@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "EllipticalTask.h"
 #include <ostream>
+#include <iostream>
 #include <iomanip>
 
 void EllipticalTask::formingRightPart() {
@@ -14,10 +15,9 @@ void EllipticalTask::formingRightPart() {
 	}
 } 
 
-
 void EllipticalTask::init(int k) {
 	// read info about coefficients:
-	std::fstream fin("equal_coefs.txt");
+	std::fstream fin(R"(input\equal_coefs.txt)");
 	fin >> lambda >> gamma >> beta;
 	fin.close();
 
@@ -37,13 +37,10 @@ void EllipticalTask::init(int k) {
 	mfd2.resize(size);;		// vector for mid_fatorized_diag2
 }
 
-
-#include <iostream>
 void EllipticalTask::solve(bool calculate) {
 	M.forming(G, lambda, gamma, beta);			// forming Matrix from Grid and task
 
 	if(calculate) formingRightPart();		    // forming Right part
-
 
 	double w = 1;
 	u = M.method_block_relaxation(x0, f, temp, w, mfd1, mfd2); // solve
@@ -75,13 +72,14 @@ void EllipticalTask::setBoundaryCondition() {
 
 //  -div(Lambda*gradU) + Gamma*U = f
 void EllipticalTask::test() {
-	//func uExactFunc = [](const Node &N) {return exp(N.x + N.y); };		// u = U(x,y)
-	//func uExactFunc = [](const Node &N) {return exp(N.x); };		// u = U(x,y)
-
+//#define EXP
+#ifdef EXP
+	func uExactFunc = [](const Node &N) {return exp(N.x + N.y); };		// u = U(x,y)
+#else
 	func uExactFunc = [](const Node &N) {return pow(N.x,4) + pow(N.y,4); };
+#endif
 
 	std::vector<func> testFuncs(9);
-//#define EXP
 
 #ifdef BOUNDARY1
 #ifdef EXP
@@ -222,13 +220,14 @@ void EllipticalTask::test() {
 	*/
 #endif
 
-
+#pragma region GridDividionDisplay
+	/*
 	for (uint32_t i = 0; i < G.width; i++) std::cout << G.nodes[i].x << " ";
 	std::cout << std::endl;
 	for (uint32_t i = 0; i < G.height; i++) std::cout << G.nodes[i*G.width].y << " ";
 	std::cout << std::endl;
-
-
+	*/
+#pragma endregion
 
 	uint32_t maxNode;
 	double maxRelevantError = 0;
@@ -240,14 +239,13 @@ void EllipticalTask::test() {
 	for (uint32_t i = 0; i < G.nodes.size(); i++) sum += pow(u[i] - uExact[i], 2);
 	sum = sqrt(sum);
 
-	std::ofstream fout1("exploreGRID.txt", std::ios::app);
+	std::ofstream fout1(R"(output\exploreGRID.txt)", std::ios::app);
 	fout1 << G.nodes[1].x - G.nodes[0].x << "\t" << sum << std::endl;
 	fout1.close();
 
-
-
-
-	std::ofstream fout("result.txt");
+#pragma region OutputResults
+	/*
+	std::ofstream fout("R"(output\result.txt)");
 	fout.precision(16);
 	//fout.width(20);
 	//fout.fill(' ');
@@ -257,7 +255,9 @@ void EllipticalTask::test() {
 			 std::setprecision(3) << std::scientific << G.nodes[i].x << "\t " <<
 			std::scientific << G.nodes[i].y << "\t " <<
 			std::setprecision(16) << std::scientific << u[i] << "\t" <<
-			    std::scientific << uExact[i] << "\t" <<
+				std::scientific << uExact[i] << "\t" <<
 				std::scientific << u[i] - uExact[i] << std::endl;
 	}
+*/
+#pragma endregion
 }
