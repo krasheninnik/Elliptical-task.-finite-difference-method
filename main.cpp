@@ -8,7 +8,7 @@ int main()
 	EllipticalTask T;
 	
 #ifdef EXPLORE_CONVERGENCE
-	const int amount_iters = 8;
+	const int amount_iters = 7;
 	for(int i = 0; i < amount_iters; i++) {
 		std::cout << "\riteration " << i << " of " << amount_iters << std::endl;
 		T.init(i);

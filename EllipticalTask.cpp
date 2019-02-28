@@ -72,7 +72,7 @@ void EllipticalTask::setBoundaryCondition() {
 
 //  -div(Lambda*gradU) + Gamma*U = f
 void EllipticalTask::test() {
-//#define EXP
+#define EXP
 #ifdef EXP
 	func uExactFunc = [](const Node &N) {return exp(N.x + N.y); };		// u = U(x,y)
 #else
