@@ -24,19 +24,20 @@ void Grid::load(int k) {
 	double stepX, stepY;  
 	fin >> stepX >> stepY;
 
-	// consider grid's unevenness
-	uint32_t amount;
-	double coef;
-
-#ifdef EXPLORE_CONVERGENCE
+#ifdef EXPLORE_CONVERGENCE	// change paramerets:
 	uint32_t iter = pow(2, k); 
 	firstColumn *= iter;
 	secondColumn *= iter;
 	width *= iter;
 	firstLine *= iter;
 	height *= iter;
-
+#else
+	uint32_t iter = 1;
 #endif
+
+	// consider grid's unevenness
+	uint32_t amount;
+	double coef;
 
 	std::vector<std::pair<uint32_t, double>> unevennessX;
 	for (int i = 0, count = 0; count != width; i++) {
@@ -54,15 +55,13 @@ void Grid::load(int k) {
 		fin >> amount >> coef;
 #ifdef EXPLORE_CONVERGENCE
 		amount *= iter;
-		if (coef != 1) coef = pow(coef, 1.0 / iter);	// for unevenness grid need change coef too.
-		
+		if (coef != 1) coef = pow(coef, 1.0 / iter);	// for unevenness grid need change coef too.	
 #endif
 		unevennessY.push_back(std::pair<int, double>(amount, coef));
 		count += amount;
 	}
 
-	///////////////////////////
-	// calculate first step.
+	// calculate first steps.
 	double stepsCoefX = 0;
 	double stepsCoefY = 0;
 	for (uint32_t i = 0; i < iter; i++) {
@@ -74,7 +73,7 @@ void Grid::load(int k) {
 
 	// formation grig:
 	// memory allocation for grid
-	nodes = std::vector<Node>(width*height);		// can throw exception...
+	nodes = std::vector<Node>(width*height);		
 
 	double dx, dy;
 	std::vector<double> dxs(width);
@@ -83,6 +82,7 @@ void Grid::load(int k) {
 
 	for (int j = 0; j < unevennessX.size(); j++) {	// fill dxs array
 		coef = unevennessX[j].second;				// coefficient of unevenness
+
 		for (int k = 0; k < unevennessX[j].first; k++) {
 			dxs[i++] = stepX;
 			stepX *= coef;
@@ -96,6 +96,7 @@ void Grid::load(int k) {
 
 	for (int i = 0; i < unevennessY.size(); i++) {	// fill dxs array
 		coef = unevennessX[i].second;				// coefficient of unevenness
+
 		for (int k = 0; k < unevennessX[i].first; k++) {
 			int offset = k * width;
 
@@ -112,6 +113,7 @@ void Grid::load(int k) {
 		}
 	}
 
+
 	// Calculate types of nodes
 	/*   struct of grid:
 
@@ -124,10 +126,11 @@ void Grid::load(int k) {
 		 *****11111****
 	*/
 	 
-
+	i += 12;
+	
 	uint32_t offset;
 
-	// mark fictitious nodes ++ 
+	// mark fictitious nodes
 	for (uint32_t i = 0; i < firstLine - 1; i++) {
 		offset = i * width;
 
@@ -194,6 +197,7 @@ void Grid::load(int k) {
 		nodes[offset + j].type = 5;
 	}
 }
+
 /*
 	Calculate exact values of the function  U and function of right part f on the grid.
 	Uses for testig.

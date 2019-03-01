@@ -57,8 +57,48 @@ void Matrix::forming(Grid &G, double lambda, double gamma, double beta){
 	// calculate elems of matrix
 	double hx1, hx2, hy1, hy2; // step for x and y
 
-#ifdef CALCULATE	// calculate the task:
+#ifdef BOUNDARY_MIX	// calculate the task:
+	for (int i = 0; i < G.nodes.size(); i++) {
+		switch (G.nodes[i].type) {
 
+		case -1:	//  fictitious node
+			mid_diag2[i] = 1;
+			break;
+
+		case 0:
+			hx1 = G.nodes[i].x - G.nodes[i - 1].x;	// hx(i-1)
+			hx2 = G.nodes[i + 1].x - G.nodes[i].x;	// hx(i)
+			hy1 = G.nodes[i].y - G.nodes[i - m].y;	// hy(i-1)
+			hy2 = G.nodes[i + m].y - G.nodes[i].y;	// hy(i)
+
+			low_diag[i - m] = -lambda * 2.0 / (hy1*(hy2 + hy1));	// miss the lamdba
+			mid_diag1[i - 1] = -lambda * 2.0 / (hx1*(hx2 + hx1));
+			mid_diag2[i] = -lambda * -2.0 * (1.0 / (hx1*hx2) + 1.0 / (hy1*hy2)) + gamma;
+			mid_diag3[i] = -lambda * 2.0 / (hx2*(hx2 + hx1));
+			high_diag[i] = -lambda * 2.0 / ((hy2*(hy2 + hy1)));
+			break;
+
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+		case 7:
+		/*case 6:
+		case 8:*/
+
+			mid_diag2[i] = 1;
+			break;
+
+		case 6:
+		case 8:
+			hx2 = G.nodes[i + 1].x - G.nodes[i].x;
+
+			mid_diag2[i] = lambda * 1.0 / hx2 + beta;
+			mid_diag3[i] = lambda * -1.0 / hx2;
+			break;
+		}
+	}
 #else
 #ifdef BOUNDARY1	// only first boundary conditionals: 
 	for (int i = 0; i < G.nodes.size(); i++) {

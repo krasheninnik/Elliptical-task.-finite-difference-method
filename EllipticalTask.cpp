@@ -21,7 +21,9 @@ void EllipticalTask::init(int k) {
 	fin >> lambda >> gamma >> beta;
 	fin.close();
 
+#ifdef CALCULATE
 	setBoundaryCondition();
+#endif
 
 	// Memory allocation for:
 	G.load(k);				// Grid
@@ -47,7 +49,7 @@ void EllipticalTask::solve(bool calculate) {
 }
 
 void EllipticalTask::setBoundaryCondition() {
-	/*
+#ifdef CALCULATE
 	funcs.resize(9);		// array of functions 
 
 	funcs[0] = [](const Node &N) {return 0; };		// f: right part of LU = f(x,y)
@@ -67,61 +69,84 @@ void EllipticalTask::setBoundaryCondition() {
 	// dU/dn = -dU/dx
 	funcs[6] = [](const Node &N) {return 0; };
 	funcs[8] = [](const Node &N) {return 0; };
-	*/
+
+#else
+	throw "Function: EllipticalTask::setBoundaryCondition() must be used only for CALCULATE";
+#endif
 }
 
 //  -div(Lambda*gradU) + Gamma*U = f
 void EllipticalTask::test() {
-#define EXP
+
 #ifdef EXP
 	func uExactFunc = [](const Node &N) {return exp(N.x + N.y); };		// u = U(x,y)
 #else
-	func uExactFunc = [](const Node &N) {return pow(N.x,4) + pow(N.y,4); };
+	func uExactFunc = [](const Node &N) {return pow(N.x, 3) + pow(N.y, 3); };
 #endif
 
 	std::vector<func> testFuncs(9);
 
+
+#ifdef BOUNDARY_MIX
+	testFuncs[0] = [&](const Node &N) {return -lambda * (6 * pow(N.x, 1) + 6 * pow(N.y, 1)) + gamma * (pow(N.x, 3) + pow(N.y, 3)); };
+
+	// dU/dn = - dU/dy:
+	testFuncs[1] = [&](const Node &N) {return pow(N.x, 3) + pow(N.y, 3); };		// boundary conditions:
+	testFuncs[3] = [&](const Node &N) {return pow(N.x, 3) + pow(N.y, 3); };
+	testFuncs[7] = [&](const Node &N) {return pow(N.x, 3) + pow(N.y, 3); };
+
+	// dU/dn = dU/dy								 
+	testFuncs[5] = [&](const Node &N) {return pow(N.x, 3) + pow(N.y, 3); };
+
+	// dU/dn = dU/dx
+	testFuncs[2] = [&](const Node &N) {return pow(N.x, 3) + pow(N.y, 3); };
+	testFuncs[4] = [&](const Node &N) {return pow(N.x, 3) + pow(N.y, 3); };
+
+	// dU/dn = -dU/dx								  
+	testFuncs[6] = [&](const Node &N) {return lambda * (-3 * pow(N.x, 2)) + beta * (pow(N.x, 3) + pow(N.y, 3)); };
+	testFuncs[8] = [&](const Node &N) {return lambda * (-3 * pow(N.x, 2)) + beta * (pow(N.x, 3) + pow(N.y, 3)); };
+#else
 #ifdef BOUNDARY1
 #ifdef EXP
 	testFuncs[0] = [&](const Node &N) {return -lambda *  (2 *exp(N.x + N.y)) + gamma * (exp(N.x + N.y)); };		// f: f = -div(Lambda*gradU) + Gamma*U 
 
 	// dU/dn = - dU/dy:
-	testFuncs[1] = [&](const Node &N) {return gamma * (exp(N.x + N.y)); };		// boundary conditions:
-	testFuncs[3] = [&](const Node &N) {return gamma * (exp(N.x + N.y)); };
-	testFuncs[7] = [&](const Node &N) {return gamma * (exp(N.x + N.y)); };
+	testFuncs[1] = [&](const Node &N) {return exp(N.x + N.y); };		// boundary conditions:
+	testFuncs[3] = [&](const Node &N) {return exp(N.x + N.y); };
+	testFuncs[7] = [&](const Node &N) {return exp(N.x + N.y); };
 
 	// dU/dn = dU/dy
-	testFuncs[5] = [&](const Node &N) {return gamma * (exp(N.x + N.y)); };
+	testFuncs[5] = [&](const Node &N) {return exp(N.x + N.y); };
 
 	// dU/dn = dU/dx
-	testFuncs[2] = [&](const Node &N) {return gamma * (exp(N.x + N.y)); };
-	testFuncs[4] = [&](const Node &N) {return gamma * (exp(N.x + N.y)); };
+	testFuncs[2] = [&](const Node &N) {return exp(N.x + N.y); };
+	testFuncs[4] = [&](const Node &N) {return exp(N.x + N.y); };
 
 	// dU/dn = -dU/dx
-	testFuncs[6] = [&](const Node &N) {return gamma * (exp(N.x + N.y)); };
-	testFuncs[8] = [&](const Node &N) {return gamma * (exp(N.x + N.y)); };
+	testFuncs[6] = [&](const Node &N) {return exp(N.x + N.y); };
+	testFuncs[8] = [&](const Node &N) {return exp(N.x + N.y); };
 #else
 	testFuncs[0] = [&](const Node &N) {return -lambda * (12 * pow(N.x,2) + 12 * pow(N.y, 2)) + gamma * (pow(N.x, 4) + pow(N.y, 4)); };
 
 // dU/dn = - dU/dy:
-	testFuncs[1] = [&](const Node &N) {return gamma * (pow(N.x, 4) + pow(N.y, 4)); };		// boundary conditions:
-	testFuncs[3] = [&](const Node &N) {return gamma * (pow(N.x, 4) + pow(N.y, 4)); };
-	testFuncs[7] = [&](const Node &N) {return gamma * (pow(N.x, 4) + pow(N.y, 4)); };
-													  
-	// dU/dn = dU/dy								 
-	testFuncs[5] = [&](const Node &N) {return gamma * (pow(N.x, 4) + pow(N.y, 4)); };
-													  
-	testFuncs[2] = [&](const Node &N) {return gamma * (pow(N.x, 4) + pow(N.y, 4)); };
-	testFuncs[4] = [&](const Node &N) {return gamma * (pow(N.x, 4) + pow(N.y, 4)); };
-													  
-	// dU/dn = -dU/dx								  
-	testFuncs[6] = [&](const Node &N) {return gamma * (pow(N.x, 4) + pow(N.y, 4)); };
-	testFuncs[8] = [&](const Node &N) {return gamma * (pow(N.x, 4) + pow(N.y, 4)); };
+	testFuncs[1] = [&](const Node &N) {return pow(N.x, 4) + pow(N.y, 4); };		// boundary conditions:
+	testFuncs[3] = [&](const Node &N) {return pow(N.x, 4) + pow(N.y, 4); };
+	testFuncs[7] = [&](const Node &N) {return pow(N.x, 4) + pow(N.y, 4); };
+												  
+	// dU/dn = dU/dy							 
+	testFuncs[5] = [&](const Node &N) {return pow(N.x, 4) + pow(N.y, 4); };
+												  
+	testFuncs[2] = [&](const Node &N) {return pow(N.x, 4) + pow(N.y, 4); };
+	testFuncs[4] = [&](const Node &N) {return pow(N.x, 4) + pow(N.y, 4); };
+												  
+	// dU/dn = -dU/dx							  
+	testFuncs[6] = [&](const Node &N) {return pow(N.x, 4) + pow(N.y, 4); };
+	testFuncs[8] = [&](const Node &N) {return pow(N.x, 4) + pow(N.y, 4); };
 #endif
 #else
 #ifdef BOUNDARY2
 
-	testFuncs[0] = [&](const Node &N) {return gamma * (pow(N.x,2)); };	// f: f = -div(Lambda*gradU) + Gamma*U 
+	testFuncs[0] = [&](const Node &N) {return gamma *  pow(N.x,2); };	// f: f = -div(Lambda*gradU) + Gamma*U 
 
 	// dU/dn = - dU/dy:
 	testFuncs[1] = [&](const Node &N) {return lambda * 0; };			// boundary conditions:
@@ -130,7 +155,7 @@ void EllipticalTask::test() {
 
 	// dU/dn = dU/dy
 	//testFuncs[5] = [&](const Node &N) {return lambda * 0; };
-	testFuncs[5] = [&](const Node &N) {return (pow(N.x, 2)); };
+	testFuncs[5] = [&](const Node &N) {return pow(N.x, 2); };
 
 
 	// dU/dn = dU/dx
@@ -166,6 +191,7 @@ void EllipticalTask::test() {
 #endif
 #endif
 #endif
+#endif
 
 	std::vector<double> uExact(M.get_dim());
 
@@ -173,19 +199,7 @@ void EllipticalTask::test() {
 	
 	solve(false);
 
-	/* calcSum debug
-	std::vector<double> x(M.get_dim(), 1);
-
-	std::cout << std::endl;
-	for (int i = 0; i < M.get_dim(); i++) {
-		uExact[i] = M.calc_sum(i, x);
-		std::cout << i << " : " <<uExact[i] << std::endl;
-	}
-	std::cout << std::endl;
-	*/
-
-	 // Debug result vizualization:
-	 
+	// Debug result vizualization:
 #ifdef DISPLAY	
 	std::cout << "\nReal:\n";
 	std::cout.precision(7);
@@ -205,21 +219,23 @@ void EllipticalTask::test() {
 		std::cout << std::endl;
 	}
 
-	std::cout << "\nError:\n";
+	std::cout << "\nErrorAbs:\n";
 	for (uint32_t i = G.height - 1; i != UINT32_MAX; i--) {
 		for (uint32_t j = 0, offset = i * G.width; j < G.width; j++) {
 			std::cout << std::setw(WIDTH) << u[offset + j] - uExact[offset + j];
 		}
 		std::cout << std::endl;
 	}
-	
-	/*
-	for (uint32_t i = 0; i < G.nodes.size(); i++) {
-		std::cout << G.nodes[i].x << "\t " << G.nodes[i].y << std::endl;
-	}
-	*/
-#endif
 
+	std::cout << "\nErrorRelate:\n";
+	for (uint32_t i = G.height - 1; i != UINT32_MAX; i--) {
+		for (uint32_t j = 0, offset = i * G.width; j < G.width; j++) {
+			std::cout << std::setw(WIDTH) << abs(uExact[offset + j] - u[offset + j]) / uExact[offset + j];
+		}
+		std::cout << std::endl;
+	}
+#endif
+	
 #pragma region GridDividionDisplay
 	/*
 	for (uint32_t i = 0; i < G.width; i++) std::cout << G.nodes[i].x << " ";
@@ -229,12 +245,7 @@ void EllipticalTask::test() {
 	*/
 #pragma endregion
 
-	uint32_t maxNode;
-	double maxRelevantError = 0;
-	double averageRelevantError = 0;
-
-	std::vector<double> absError(G.nodes.size());
-	
+#ifdef GRID_EXPLORE
 	double sum = 0;
 	for (uint32_t i = 0; i < G.nodes.size(); i++) sum += pow(u[i] - uExact[i], 2);
 	sum = sqrt(sum);
@@ -242,10 +253,11 @@ void EllipticalTask::test() {
 	std::ofstream fout1(R"(output\exploreGRID.txt)", std::ios::app);
 	fout1 << G.nodes[1].x - G.nodes[0].x << "\t" << sum << std::endl;
 	fout1.close();
+#endif
 
 #pragma region OutputResults
-	/*
-	std::ofstream fout("R"(output\result.txt)");
+#ifdef OUTPUT_RESULT
+	std::ofstream fout(R"(output\result.txt)");
 	fout.precision(16);
 	//fout.width(20);
 	//fout.fill(' ');
@@ -258,6 +270,6 @@ void EllipticalTask::test() {
 				std::scientific << uExact[i] << "\t" <<
 				std::scientific << u[i] - uExact[i] << std::endl;
 	}
-*/
+#endif
 #pragma endregion
 }
